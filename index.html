@@ -1,3 +1,35 @@
+# add to .bashrc for cli util
+# e.g. `goblin netplan`
+goblin() {
+  local f
+  f=$(curl -sL https://goblinlord.com)
+
+  if [ -z "$1" ]; then
+    echo "$f"
+    return
+  fi
+
+  echo "$f" | awk -v term="$1" '
+    BEGIN { IGNORECASE = 1; in_block = 0 }
+    /^#/ {
+      if (tolower($0) ~ tolower(term)) {
+        in_block = 1
+        print $0
+        next
+      }
+      if (in_block) {
+        print ""
+        in_block = 0
+      }
+      next
+    }
+    {
+      if (in_block) print
+    }
+  '
+}
+
+
 # Serial Console over GRUB on Ubuntu
 echo 'GRUB_CMDLINE_LINUX="console=tty0 console=ttyS0,115200n8"' >> /etc/default/grub
 update-grub
@@ -16,3 +48,22 @@ kill -9 $(lsof -t -i :8080)
 
 # Get public IP quietly
 curl -s ifconfig.me
+
+# Write ISO to USB (double check /dev/sdX with lsblk)
+sudo dd if=linux.iso of=/dev/sdX bs=4M status=progress oflag=sync
+
+# Reverse SSH tunnel to reach a machine behind NAT
+- establish from hidden host:
+ssh publicbox -R7777:local-ssh-able-host:22
+
+- then from help:
+ssh -J publicbox -p 7777 user@local-ssh-able-host
+
+
+# Grant raw socket capability to tcpdump binary (all users)
+sudo setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump
+
+- Optional: restrict by group
+sudo chgrp netmon /usr/sbin/tcpdump
+sudo chmod 750 /usr/sbin/tcpdump
+sudo usermod -aG netmon youruser
