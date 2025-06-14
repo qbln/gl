@@ -1,0 +1,18 @@
+# Serial Console over GRUB on Ubuntu
+echo 'GRUB_CMDLINE_LINUX="console=tty0 console=ttyS0,115200n8"' >> /etc/default/grub
+update-grub
+
+# Remove Netplan and add systemd-networkd
+rm /etc/netplan/*.yaml
+systemctl enable systemd-networkd
+reboot
+
+# TCPDump pipe to Wireshark over SSH jump
+ssh -J user@jump user@target 'sudo tcpdump -i eth0 -U -w -' | wireshark -k -i -
+
+# Find and kill process by port
+lsof -i :8080
+kill -9 $(lsof -t -i :8080)
+
+# Get public IP quietly
+curl -s ifconfig.me
